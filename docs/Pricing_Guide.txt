@@ -1,0 +1,15 @@
+ABC Technologies - Pricing Guide
+
+1. Basic Plan
+- $19/month per user
+- Includes core SaaS features, 5GB storage, email support.
+
+2. Professional Plan
+- $49/month per user
+- Includes all Basic features, 50GB storage, Priority email & chat support, advanced analytics.
+
+3. Enterprise Plan
+- Custom pricing (Starts at $99/month per user)
+- Unlimited storage, 24/7 dedicated support, custom integrations.
+
+Note: Annual subscriptions receive a 20% discount compared to month-to-month billing.

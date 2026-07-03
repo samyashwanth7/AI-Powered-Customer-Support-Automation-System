@@ -1,0 +1,14 @@
+ABC Technologies - Company Policy Document
+
+1. Returns and Refunds
+- Refund requests for annual subscriptions must be reviewed and approved by management.
+- Refunds are generally only provided within the first 30 days of purchase.
+- Monthly subscriptions are non-refundable once the billing cycle starts.
+
+2. Account Closure
+- Account closure requests require a manager's approval.
+- We retain customer data for 30 days post-closure unless a hard delete is requested.
+
+3. Escalations
+- Any compensation requests or complaints about service must be escalated to a supervisor.
+- Critical technical issues affecting all users are immediately escalated to Tier 3 support.

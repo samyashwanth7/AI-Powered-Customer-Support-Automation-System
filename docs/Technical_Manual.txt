@@ -1,0 +1,14 @@
+ABC Technologies - Technical Manual
+
+1. Installation Issues
+- If the application crashes during file upload, ensure you have granted sufficient file permissions to the browser or desktop app. Also check that your file is under the 50MB limit for standard uploads.
+- Clear browser cache if web app elements fail to load.
+
+2. Login Problems
+- Make sure Caps Lock is off.
+- If SSO (Single Sign-On) fails, contact your IT administrator to verify your identity provider settings.
+
+3. Application Errors
+- Error 404: Page not found. Check the URL.
+- Error 500: Server error. Try again in 5 minutes. If it persists, escalate to Tier 2 technical support.
+- Application crashes on upload: This is a known issue with older versions of our desktop client. Update to version 2.1 or newer.

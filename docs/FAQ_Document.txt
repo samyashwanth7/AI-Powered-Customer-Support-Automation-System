@@ -1,0 +1,16 @@
+ABC Technologies - FAQ Document
+
+Q: How do I reset my password?
+A: Go to the login page and click "Forgot Password". A reset link will be sent to your registered email.
+
+Q: How can I update my profile?
+A: Log in, go to Settings > Profile, and make your changes there.
+
+Q: How do I activate or deactivate my account?
+A: Go to Settings > Account Management. You can deactivate your account there. Account closure/deletion requires reaching out to support for human approval.
+
+Q: Where can I find my invoice?
+A: Invoices are available under Settings > Billing > Invoice History.
+
+Q: How do I change my payment method?
+A: Go to Settings > Billing > Payment Methods to add or update your credit card details.
