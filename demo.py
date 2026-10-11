@@ -1,4 +1,5 @@
 import os
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -28,7 +29,8 @@ def main():
             for node_name, state_update in event.items():
                 print(f"[{node_name}] executed.")
                 if "intent" in state_update:
-                    print(f"  -> Intent Classified: {state_update.get('intent')} | Department: {state_update.get('department')}")
+                    print(f"  -> Intent: {state_update.get('intent')} | Department: {state_update.get('department')}")
+                    print(f"  -> Triage: Sentiment={state_update.get('sentiment')} | Priority={state_update.get('priority')} | Ticket={state_update.get('ticket_id')}")
                 if "final_response" in state_update:
                     print(f"\nFINAL RESPONSE:\n{state_update['final_response']}\n")
         
@@ -48,6 +50,8 @@ def main():
                         print(f"\nFINAL RESPONSE (After Approval):\n{state_update['final_response']}\n")
         
         print("\n")
+        # Gentle pause between queries to respect free-tier API rate windows
+        time.sleep(2)
 
     # Generate Workflow Diagram
     try:
@@ -57,7 +61,7 @@ def main():
             f.write(png_data)
         print("Workflow diagram saved successfully as 'workflow_diagram.png'.")
     except Exception as e:
-        print(f"Failed to generate workflow diagram: {e}")
+        print(f"Workflow diagram generation note: {e}")
 
 if __name__ == "__main__":
     main()
