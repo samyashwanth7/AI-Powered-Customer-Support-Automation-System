@@ -1,3 +1,11 @@
+import sys
+# Global compatibility shim for langchain_core 0.3+/1.0+ pydantic_v1 deprecation
+try:
+    import pydantic.v1 as pydantic_v1
+    sys.modules['langchain_core.pydantic_v1'] = pydantic_v1
+except ImportError:
+    pass
+
 import streamlit as st
 import os
 import uuid
