@@ -14,6 +14,19 @@ from src.rag import retriever
 # Initialize LLM
 llm = ChatGroq(model="qwen/qwen3.8-27b", api_key=os.getenv("GROQ_API_KEY"))
 
+def extract_tokens(response) -> int:
+    """Extracts token count from LLM response metadata or estimates safely."""
+    if hasattr(response, "usage_metadata") and response.usage_metadata:
+        tokens = response.usage_metadata.get("total_tokens", 0)
+        if tokens:
+            return int(tokens)
+    if hasattr(response, "response_metadata") and "token_usage" in response.response_metadata:
+        tokens = response.response_metadata["token_usage"].get("total_tokens", 0)
+        if tokens:
+            return int(tokens)
+    content = getattr(response, "content", "")
+    return max(len(str(content)) // 4, 20)
+
 class IntentOutput(BaseModel):
     intent: str = Field(description="The category of the customer query: Sales, Technical, Billing, Account, or Memory")
     department: str = Field(description="The department to route to: Sales, Technical, Billing, Account, or None")
@@ -40,8 +53,10 @@ def intent_classifier(state: AgentState):
        - Low: General product information, pricing exploration, casual questions.
     """
     
-    structured_llm = llm.with_structured_output(IntentOutput)
-    response = structured_llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=last_message)])
+    structured_llm = llm.with_structured_output(IntentOutput, include_raw=True)
+    raw_res = structured_llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=last_message)])
+    response = raw_res["parsed"]
+    tokens = extract_tokens(raw_res.get("raw"))
     
     ticket_id = state.get("ticket_id") or f"#TKT-{random.randint(1000, 9999)}"
     
@@ -50,7 +65,8 @@ def intent_classifier(state: AgentState):
         "department": response.department,
         "sentiment": response.sentiment,
         "priority": response.priority,
-        "ticket_id": ticket_id
+        "ticket_id": ticket_id,
+        "total_tokens": tokens
     }
 
 def retrieve_context(state: AgentState):
@@ -74,12 +90,13 @@ def department_agent(state: AgentState):
     """
     
     response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=query)])
+    tokens = extract_tokens(response)
     
     # Check for human-in-the-loop triggers
     high_risk_keywords = ["refund", "cancel", "closure", "compensation", "escalate"]
     approval_required = any(keyword in query.lower() for keyword in high_risk_keywords)
     
-    return {"messages": [response], "approval_required": approval_required}
+    return {"messages": [response], "approval_required": approval_required, "total_tokens": tokens}
 
 def human_approval(state: AgentState):
     """Node executed after a human has intervened to approve."""
@@ -99,7 +116,8 @@ def supervisor_agent(state: AgentState):
         system_prompt = "You are a helpful customer support supervisor. Answer the user's question based strictly on the conversation history."
         recent_history = messages[-8:] if len(messages) > 8 else messages
         response = llm.invoke([SystemMessage(content=system_prompt)] + recent_history)
-        return {"final_response": response.content, "messages": [response]}
+        tokens = extract_tokens(response)
+        return {"final_response": response.content, "messages": [response], "total_tokens": tokens}
         
     draft_response = messages[-1].content
     approved = False
@@ -123,4 +141,6 @@ def supervisor_agent(state: AgentState):
         SystemMessage(content=system_prompt),
         HumanMessage(content="Please provide the finalized response for the customer.")
     ])
-    return {"final_response": response.content, "messages": [response]}
+    tokens = extract_tokens(response)
+    return {"final_response": response.content, "messages": [response], "total_tokens": tokens}
+

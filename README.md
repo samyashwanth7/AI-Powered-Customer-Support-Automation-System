@@ -57,6 +57,10 @@ Utilizes `SqliteSaver` to maintain thread-level conversation history in `memory.
 - **Continuous Evaluation:** Captures user satisfaction ratings (👍 / 👎) stored in SQLite for model fine-tuning and evaluation.
 - **Real-Time Analytics:** Visual breakdown of ticket volume by department, customer sentiment distribution, priority breakdown, and an audit trail.
 
+### 7. Inference Latency & Token Economics Telemetry
+- **Granular Token Profiling:** Extracts exact token consumption directly from Groq LPUs across every state machine node (`classifier`, `department`, `supervisor`) using LangGraph reducer accumulators.
+- **Latency Telemetry & Cost Tracking:** Profiles wall-clock execution time per turn and surfaces live telemetry badges (`⚡ latency` • `🪙 tokens`) directly on response cards and in the operational audit trail.
+
 ---
 
 ## 📁 Repository Structure

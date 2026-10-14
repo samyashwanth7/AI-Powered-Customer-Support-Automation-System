@@ -9,6 +9,7 @@ except ImportError:
 import streamlit as st
 import os
 import uuid
+import time
 import pandas as pd
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
@@ -147,6 +148,22 @@ header[data-testid="stHeader"] {
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.25);
     color: #6EE7B7;
+}
+
+.badge-telemetry {
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    color: #7DD3FC;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+}
+
+.badge-tokens {
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: #D8B4FE;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
 }
 
 /* Status indicator pulse */
@@ -340,21 +357,30 @@ with tab_chat:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
             
-            # Show triage badges on assistant messages
+            # Show triage badges and telemetry on assistant messages
             if msg["role"] == "assistant" and "metadata" in msg:
                 meta = msg["metadata"]
                 dept = meta.get('department', 'General')
                 sentiment = meta.get('sentiment', 'Neutral')
                 priority = meta.get('priority', 'Medium')
+                latency = meta.get('latency_sec')
+                tokens = meta.get('total_tokens')
                 
                 s_class = "badge-sent-urg" if sentiment in ["Frustrated", "Urgent"] else ("badge-sent-pos" if sentiment == "Positive" else "badge-sent-neut")
                 p_class = "badge-prio-high" if priority == "High" else ("badge-prio-med" if priority == "Medium" else "badge-prio-low")
+                
+                telemetry_badges = ""
+                if latency:
+                    telemetry_badges += f'<span class="badge-pill badge-telemetry">⚡ {latency}s</span>'
+                if tokens:
+                    telemetry_badges += f'<span class="badge-pill badge-tokens">🪙 {tokens} tokens</span>'
                 
                 st.markdown(f"""
                 <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
                     <span class="badge-pill badge-dept">🏢 {dept}</span>
                     <span class="badge-pill {s_class}">🎭 {sentiment}</span>
                     <span class="badge-pill {p_class}">⚡ {priority} Priority</span>
+                    {telemetry_badges}
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -387,14 +413,23 @@ with tab_chat:
             if st.button("✅ Authorize Request (Simulate Supervisor)", type="primary", use_container_width=True):
                 config = {"configurable": {"thread_id": st.session_state.thread_id}}
                 with st.spinner("Authorizing request through supervisor node..."):
+                    start_time = time.time()
                     final_response = None
+                    auth_tokens = 0
                     for event in graph_app.stream(None, config=config):
                         for node_name, state_update in event.items():
                             if "final_response" in state_update:
                                 final_response = state_update["final_response"]
+                            if "total_tokens" in state_update:
+                                auth_tokens += state_update.get("total_tokens", 0)
+                    
+                    elapsed_sec = round(time.time() - start_time, 2)
                     
                     if final_response:
-                        meta = st.session_state.last_metadata
+                        meta = dict(st.session_state.last_metadata)
+                        meta["latency_sec"] = elapsed_sec
+                        if auth_tokens:
+                            meta["total_tokens"] = meta.get("total_tokens", 0) + auth_tokens
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": final_response,
@@ -410,7 +445,9 @@ with tab_chat:
                             meta.get("sentiment", "Urgent"),
                             "High",
                             True,
-                            final_response
+                            final_response,
+                            latency_sec=elapsed_sec,
+                            token_count=meta.get("total_tokens", 0)
                         )
                         st.session_state.pending_approval = False
                         st.rerun()
@@ -434,8 +471,10 @@ with tab_chat:
 
             with st.chat_message("assistant"):
                 with st.spinner("Triage classifying, retrieving knowledge, and synthesizing response..."):
+                    start_time = time.time()
                     final_response = None
                     extracted_meta = {}
+                    step_tokens = 0
 
                     for event in graph_app.stream(inputs, config=config):
                         for node_name, state_update in event.items():
@@ -445,8 +484,14 @@ with tab_chat:
                                 extracted_meta["sentiment"] = state_update.get("sentiment")
                             if "priority" in state_update:
                                 extracted_meta["priority"] = state_update.get("priority")
+                            if "total_tokens" in state_update:
+                                step_tokens += state_update.get("total_tokens", 0)
                             if "final_response" in state_update:
                                 final_response = state_update["final_response"]
+
+                    elapsed_sec = round(time.time() - start_time, 2)
+                    extracted_meta["latency_sec"] = elapsed_sec
+                    extracted_meta["total_tokens"] = step_tokens
 
                     st.session_state.last_metadata = extracted_meta
                     current_state = graph_app.get_state(config)
@@ -472,7 +517,9 @@ with tab_chat:
                             extracted_meta.get("sentiment", "Neutral"),
                             extracted_meta.get("priority", "Medium"),
                             False,
-                            final_response
+                            final_response,
+                            latency_sec=elapsed_sec,
+                            token_count=step_tokens
                         )
                         st.rerun()
 
@@ -480,13 +527,14 @@ with tab_dashboard:
     st.markdown("""
     <div style="margin-bottom: 20px;">
         <h3 style="margin: 0; color: #F8FAFC; font-weight: 700;">📊 Operational Intelligence & Telemetry</h3>
-        <p style="color: #94A3B8; font-size: 0.86rem; margin-top: 4px;">Live triage metrics, sentiment telemetry, and audit trail extracted directly from the persistent SQLite database.</p>
+        <p style="color: #94A3B8; font-size: 0.86rem; margin-top: 4px;">Live triage metrics, execution latency, token expenditure, and audit logs extracted from SQLite.</p>
     </div>
     """, unsafe_allow_html=True)
     
     analytics = get_analytics_metrics()
     
-    # KPI Row
+    # KPI Row 1: Operations & Resolution Quality
+    st.markdown("<p style='font-size:0.8rem; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Operational Throughput & Resolution</p>", unsafe_allow_html=True)
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.metric(label="Total Inbound Queries", value=analytics["total_tickets"])
@@ -496,6 +544,20 @@ with tab_dashboard:
         st.metric(label="Customer Satisfaction (👍)", value=f"{analytics['satisfaction_rate']}%")
     with m4:
         st.metric(label="User Feedback Collected", value=analytics["total_feedback"])
+
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+    # KPI Row 2: Performance & Token Telemetry
+    st.markdown("<p style='font-size:0.8rem; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;'>Inference Performance & Economics</p>", unsafe_allow_html=True)
+    t1, t2, t3, t4 = st.columns(4)
+    with t1:
+        st.metric(label="Avg Pipeline Latency", value=f"{analytics['avg_latency']}s", delta=f"{analytics['avg_latency']}s wall-clock" if analytics['avg_latency'] > 0 else None, delta_color="off")
+    with t2:
+        st.metric(label="Total Tokens Consumed", value=f"{analytics['total_tokens']:,}")
+    with t3:
+        st.metric(label="Avg Tokens / Query", value=f"{analytics['avg_tokens']} tokens")
+    with t4:
+        st.metric(label="Inference Compute", value="Free Tier (Groq)", delta="Qwen-27b High Speed", delta_color="off")
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
@@ -528,13 +590,16 @@ with tab_dashboard:
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-    # Audit Log Table
-    st.markdown("##### 📋 Live Session Audit Trail")
+    # Audit Log Table with Telemetry
+    st.markdown("##### 📋 Live Session Audit Trail & Telemetry Logs")
     if analytics["recent_tickets"]:
         df_audit = pd.DataFrame(
             analytics["recent_tickets"],
-            columns=["Timestamp", "Ticket ID", "Department", "Sentiment", "Priority", "HITL Escalated", "Customer Query"]
+            columns=["Timestamp", "Ticket ID", "Department", "Sentiment", "Priority", "HITL Paused", "Latency (s)", "Tokens", "Customer Query"]
         )
+        df_audit["HITL Paused"] = df_audit["HITL Paused"].apply(lambda x: "⚠️ Yes" if x == 1 else "✅ No")
+        df_audit["Latency (s)"] = df_audit["Latency (s)"].apply(lambda x: f"{x}s" if x > 0 else "N/A")
         st.dataframe(df_audit, use_container_width=True)
     else:
         st.info("No ticket events recorded yet. Start interacting in the portal to populate telemetry data!")
+
