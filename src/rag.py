@@ -17,20 +17,21 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 def setup_rag():
+    """Initializes the RAG retriever with in-memory Chroma vectorstore for maximum speed and reliability."""
     docs_dir = "docs"
     documents = []
     
-    # Load all txt files
-    for file in os.listdir(docs_dir):
-        if file.endswith(".txt"):
-            loader = TextLoader(os.path.join(docs_dir, file), encoding='utf-8')
-            documents.extend(loader.load())
+    if os.path.exists(docs_dir):
+        for file in os.listdir(docs_dir):
+            if file.endswith(".txt"):
+                loader = TextLoader(os.path.join(docs_dir, file), encoding='utf-8')
+                documents.extend(loader.load())
             
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    splits = text_splitter.split_documents(documents)
+    splits = text_splitter.split_documents(documents) if documents else []
     
-    # Create vector store
-    vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings, persist_directory="./chroma_db")
+    # In-memory vectorstore eliminates SQLite schema migration conflicts and disk lock errors
+    vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore.as_retriever(search_kwargs={"k": 2})
 
 retriever = setup_rag()
