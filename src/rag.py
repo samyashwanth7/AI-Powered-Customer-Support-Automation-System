@@ -32,6 +32,6 @@ def setup_rag():
     
     # In-memory vectorstore eliminates SQLite schema migration conflicts and disk lock errors
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-    return vectorstore.as_retriever(search_kwargs={"k": 2})
+    return vectorstore.as_retriever(search_kwargs={"k": 3})
 
 retriever = setup_rag()

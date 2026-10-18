@@ -1,0 +1,50 @@
+{"id": 1, "query": "What are the pricing plans available for your software?", "intent": "Sales", "approval": false, "expect_any": ["$19"], "answerable": true}
+{"id": 2, "query": "How much is the Professional plan per user?", "intent": "Sales", "approval": false, "expect_any": ["$49"], "answerable": true}
+{"id": 3, "query": "Is there a discount if I pay annually?", "intent": "Sales", "approval": false, "expect_any": ["20%"], "answerable": true}
+{"id": 4, "query": "What does the Enterprise plan include?", "intent": "Sales", "approval": false, "expect_any": ["unlimited"], "answerable": true}
+{"id": 5, "query": "How much storage do I get on the Basic plan?", "intent": "Sales", "approval": false, "expect_any": ["5gb", "5 gb"], "answerable": true}
+{"id": 6, "query": "Do you offer a free trial?", "intent": "Sales", "approval": false, "expect_any": null, "answerable": false}
+{"id": 7, "query": "Which plan comes with 24/7 dedicated support?", "intent": "Sales", "approval": false, "expect_any": ["enterprise"], "answerable": true}
+{"id": 8, "query": "Can I get a volume discount for 200 users?", "intent": "Sales", "approval": false, "expect_any": ["custom", "enterprise"], "answerable": true}
+{"id": 9, "query": "What is the difference between the Basic and Professional plans?", "intent": "Sales", "approval": false, "expect_any": ["analytics", "50gb", "50 gb"], "answerable": true}
+{"id": 10, "query": "Do you have a student discount?", "intent": "Sales", "approval": false, "expect_any": null, "answerable": false}
+{"id": 11, "query": "Does the Professional plan include chat support?", "intent": "Sales", "approval": false, "expect_any": ["chat"], "answerable": true}
+{"id": 12, "query": "My application crashes whenever I upload a file.", "intent": "Technical", "approval": false, "expect_any": ["permission", "2.1", "50mb", "50 mb"], "answerable": true}
+{"id": 13, "query": "What is the maximum file upload size?", "intent": "Technical", "approval": false, "expect_any": ["50mb", "50 mb"], "answerable": true}
+{"id": 14, "query": "I'm getting an Error 500 on the dashboard.", "intent": "Technical", "approval": false, "expect_any": ["5 minutes", "tier 2"], "answerable": true}
+{"id": 15, "query": "I get Error 404 when I open a page.", "intent": "Technical", "approval": false, "expect_any": ["url"], "answerable": true}
+{"id": 16, "query": "SSO login keeps failing for my whole team.", "intent": "Technical", "approval": false, "expect_any": ["it administrator", "identity provider"], "answerable": true}
+{"id": 17, "query": "Web app elements aren't loading properly.", "intent": "Technical", "approval": false, "expect_any": ["cache"], "answerable": true}
+{"id": 18, "query": "Which desktop client version fixes the upload crash?", "intent": "Technical", "approval": false, "expect_any": ["2.1"], "answerable": true}
+{"id": 19, "query": "The app is down for everyone in our company, this is critical!", "intent": "Technical", "approval": false, "expect_any": ["tier 3", "escalat"], "answerable": true}
+{"id": 20, "query": "How do I install the mobile app on Android?", "intent": "Technical", "approval": false, "expect_any": null, "answerable": false}
+{"id": 21, "query": "Why does the desktop app freeze on startup?", "intent": "Technical", "approval": false, "expect_any": null, "answerable": false}
+{"id": 22, "query": "The upload still fails after updating to version 2.1, what now?", "intent": "Technical", "approval": false, "expect_any": ["permission", "50mb", "50 mb", "tier 2", "escalat"], "answerable": true}
+{"id": 23, "query": "I need a refund for my annual subscription.", "intent": "Billing", "approval": true, "expect_any": ["management", "approv"], "answerable": true}
+{"id": 24, "query": "What is your refund policy?", "intent": "Billing", "approval": false, "expect_any": ["30 days"], "answerable": true}
+{"id": 25, "query": "Where can I find my invoice?", "intent": "Billing", "approval": false, "expect_any": ["invoice history"], "answerable": true}
+{"id": 26, "query": "How do I change my payment method?", "intent": "Billing", "approval": false, "expect_any": ["payment methods"], "answerable": true}
+{"id": 27, "query": "Can I get my money back? I was charged yesterday and I don't want the plan.", "intent": "Billing", "approval": true, "expect_any": ["30 days", "management", "approv", "refund"], "answerable": true}
+{"id": 28, "query": "Please cancel my subscription right now.", "intent": "Billing", "approval": true, "expect_any": null, "answerable": true}
+{"id": 29, "query": "How do I cancel my free trial before I get charged?", "intent": "Billing", "approval": false, "expect_any": null, "answerable": false}
+{"id": 30, "query": "Are monthly subscriptions refundable?", "intent": "Billing", "approval": false, "expect_any": ["non-refundable", "not refundable"], "answerable": true}
+{"id": 31, "query": "I was charged twice this month, I want compensation.", "intent": "Billing", "approval": true, "expect_any": ["supervisor", "escalat"], "answerable": true}
+{"id": 32, "query": "How do I get a copy of last month's invoice?", "intent": "Billing", "approval": false, "expect_any": ["invoice history"], "answerable": true}
+{"id": 33, "query": "I demand a refund and compensation for the downtime last week!", "intent": "Billing", "approval": true, "expect_any": ["supervisor", "management", "approv"], "answerable": true}
+{"id": 34, "query": "Why was my card declined when I tried to change payment methods?", "intent": "Billing", "approval": false, "expect_any": null, "answerable": false}
+{"id": 35, "query": "I forgot my account password.", "intent": "Account", "approval": false, "expect_any": ["forgot password", "reset link"], "answerable": true}
+{"id": 36, "query": "How can I update my profile?", "intent": "Account", "approval": false, "expect_any": ["settings"], "answerable": true}
+{"id": 37, "query": "I want to close my account permanently.", "intent": "Account", "approval": true, "expect_any": ["manager", "approv"], "answerable": true}
+{"id": 38, "query": "How do I deactivate my account?", "intent": "Account", "approval": false, "expect_any": ["settings"], "answerable": true}
+{"id": 39, "query": "How long do you keep my data after I close my account?", "intent": "Account", "approval": false, "expect_any": ["30 days"], "answerable": true}
+{"id": 40, "query": "Please delete all my data and shut down my account.", "intent": "Account", "approval": true, "expect_any": null, "answerable": true}
+{"id": 41, "query": "I want to speak to your manager about my account.", "intent": "Account", "approval": true, "expect_any": null, "answerable": true}
+{"id": 42, "query": "Can I change the email address on my account?", "intent": "Account", "approval": false, "expect_any": ["settings", "profile"], "answerable": true}
+{"id": 43, "query": "How do I activate my account?", "intent": "Account", "approval": false, "expect_any": ["settings"], "answerable": true}
+{"id": 44, "query": "How do I turn off two-factor authentication?", "intent": "Account", "approval": false, "expect_any": null, "answerable": false}
+{"id": 45, "query": "What was my previous support issue?", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}
+{"id": 46, "query": "Can you remind me what I asked earlier?", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}
+{"id": 47, "query": "What did we discuss last time?", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}
+{"id": 48, "query": "What was the last problem I reported?", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}
+{"id": 49, "query": "Summarize my earlier questions.", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}
+{"id": 50, "query": "Did I already ask about refunds?", "intent": "Memory", "approval": false, "expect_any": null, "answerable": true}

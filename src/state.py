@@ -14,3 +14,6 @@ class AgentState(TypedDict, total=False):
     priority: str
     ticket_id: str
     total_tokens: Annotated[int, operator.add]
+    search_query: str
+    retry_count: int
+    is_grounded: bool
