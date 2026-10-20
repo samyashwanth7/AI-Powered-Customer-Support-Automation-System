@@ -4,10 +4,11 @@
 [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![Groq LPU](https://img.shields.io/badge/Inference-Groq_LPUs-purple.svg)](https://groq.com/)
 [![ChromaDB](https://img.shields.io/badge/VectorDB-ChromaDB-red.svg)](https://www.trychroma.com/)
+[![Redis](https://img.shields.io/badge/Cache-Redis-DC382D.svg)](https://redis.io/)
 [![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-An enterprise-grade, multi-agent customer support automation platform engineered with **LangGraph**, **LangChain**, and **Groq LPUs**. The system combines **single-pass query triage**, **Corrective RAG (CRAG) cyclical query reformulation**, **semantic Human-in-the-Loop (HITL) policy guardrails**, and **SQLite state checkpointing**, accompanied by a live **operational analytics & telemetry dashboard**.
+An enterprise-grade, multi-agent customer support automation platform engineered with **LangGraph**, **LangChain**, **Groq LPUs**, and **Redis**. The system combines **single-pass query triage**, **Corrective RAG (CRAG) cyclical query reformulation**, **Redis Cache-Aside acceleration**, **semantic Human-in-the-Loop (HITL) policy guardrails**, and **SQLite state checkpointing**, accompanied by a live **operational analytics & telemetry dashboard**.
 
 ---
 
@@ -17,7 +18,9 @@ The architecture is implemented as an event-driven cyclic state machine in **Lan
 
 ```mermaid
 flowchart TD
-    START([Inbound Customer Query]) --> CLASSIFIER[Intent, Sentiment & Action Triage]
+    START([Inbound Customer Query]) --> CACHE{Redis Cache Hit?}
+    CACHE -->|Yes: <10ms| CACHE_HIT([Return Cached Response • 0 Tokens])
+    CACHE -->|No: Cache Miss| CLASSIFIER[Intent, Sentiment & Action Triage]
     
     CLASSIFIER -->|Intent == Memory| SUPERVISOR[Supervisor Polish & Multi-Turn Recall]
     CLASSIFIER -->|Standard Department Query| RAG[ChromaDB Knowledge Retrieval]
@@ -34,7 +37,8 @@ flowchart TD
     CHECK_HITL -->|No: Routine Inquiry| SUPERVISOR
     
     HITL_INTERRUPT -->|Authorized by Supervisor| SUPERVISOR
-    SUPERVISOR --> END([Final Customer Response & Operations Audit Log])
+    SUPERVISOR --> SAVE_CACHE[Store in Redis with TTL]
+    SAVE_CACHE --> END([Final Customer Response & Operations Audit Log])
 ```
 
 ---
@@ -85,6 +89,10 @@ Unlike naive linear chains, the system features a **closed feedback loop**:
 - **Continuous Evaluation:** Captures user satisfaction ratings (👍 / 👎) logged directly to SQLite for evaluation.
 - **Inference Economics:** Measures per-turn wall-clock latency and token consumption using LangGraph state reducers (`operator.add`), displaying live badges and audit analytics.
 
+### 7. Redis Cache-Aside Acceleration (Sub-10ms FAQ Response)
+- Employs an enterprise **Cache-Aside Pattern** via Redis (with an automatic in-memory fallback for offline/development environments).
+- Repeated customer questions and common FAQs bypass multi-agent graph execution entirely, serving verified responses in **< 10ms with 0 tokens consumed**, drastically reducing cloud inference costs.
+
 ---
 
 ## 📁 Repository Structure
@@ -99,6 +107,7 @@ Unlike naive linear chains, the system features a **closed feedback loop**:
 │   ├── nodes.py         # Intent classifier, RAG retriever, specialist agents & supervisor
 │   ├── graph.py         # LangGraph cyclical state machine compilation & SQLite checkpointer
 │   ├── rag.py           # In-memory ChromaDB vector store with MiniLM embeddings
+│   ├── cache.py         # Redis-backed Cache-Aside layer with automatic offline fallback
 │   └── analytics.py     # Operational KPIs, telemetry, and feedback logging in SQLite
 ├── docs/                # Knowledge base text documents (Policy, Pricing, Manual, FAQ)
 ├── app.py               # Streamlit web application (Chat Portal + Operations Dashboard)

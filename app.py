@@ -166,6 +166,14 @@ header[data-testid="stHeader"] {
     font-size: 0.72rem;
 }
 
+.badge-cache {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #FCA5A5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+}
+
 /* Status indicator pulse */
 .status-indicator {
     display: inline-block;
@@ -265,6 +273,9 @@ div[data-testid="stMetricValue"] {
 from src.analytics import init_analytics_db, log_ticket_event, log_feedback, get_analytics_metrics
 init_analytics_db()
 
+# Initialize Redis/In-Memory Cache Layer
+from src.cache import support_cache
+
 # Initialize session states
 if "thread_id" not in st.session_state:
     st.session_state.thread_id = str(uuid.uuid4())
@@ -315,6 +326,8 @@ with tab_chat:
                 <span class="badge-pill badge-ticket">{st.session_state.ticket_id}</span>
                 <span style="color:#64748B; margin: 0 8px;">|</span>
                 <span style="font-size:0.82rem; color:#94A3B8;">Thread: <code style="color:#A5B4FC; background:transparent;">{st.session_state.thread_id[:8]}...</code></span>
+                <span style="color:#64748B; margin: 0 8px;">|</span>
+                <span style="font-size:0.82rem; color:#94A3B8;">Cache: <code style="color:#FCA5A5; background:transparent;">{support_cache.backend_status}</code></span>
                 <span style="color:#64748B; margin: 0 8px;">|</span>
                 <span style="font-size:0.82rem; color:#E2E8F0;">{status_dot}</span>
             </div>
@@ -370,10 +383,13 @@ with tab_chat:
                 p_class = "badge-prio-high" if priority == "High" else ("badge-prio-med" if priority == "Medium" else "badge-prio-low")
                 
                 telemetry_badges = ""
-                if latency:
+                if latency is not None:
                     telemetry_badges += f'<span class="badge-pill badge-telemetry">⚡ {latency}s</span>'
-                if tokens:
+                if tokens is not None:
                     telemetry_badges += f'<span class="badge-pill badge-tokens">🪙 {tokens} tokens</span>'
+                if meta.get("cache_hit"):
+                    cache_src = meta.get("cache_source", "Redis")
+                    telemetry_badges += f'<span class="badge-pill badge-cache">💾 {cache_src} Cache Hit</span>'
                 
                 st.markdown(f"""
                 <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
@@ -466,6 +482,43 @@ with tab_chat:
             with st.chat_message("user"):
                 st.markdown(user_query)
 
+            # 1. Fast Cache-Aside check (Redis / In-Memory Fallback)
+            cached_data = support_cache.get(user_query)
+            if cached_data and cached_data.get("intent") != "Memory" and not cached_data.get("approval_required"):
+                final_response = cached_data["final_response"]
+                extracted_meta = dict(cached_data.get("metadata", {}))
+                extracted_meta["latency_sec"] = 0.01
+                extracted_meta["total_tokens"] = 0
+                extracted_meta["cache_hit"] = True
+                extracted_meta["cache_source"] = cached_data.get("cache_source", "Redis")
+
+                st.session_state.last_metadata = extracted_meta
+                with st.chat_message("assistant"):
+                    st.markdown(final_response)
+
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": final_response,
+                    "metadata": extracted_meta
+                })
+
+                # Log event in SQLite analytics table
+                log_ticket_event(
+                    st.session_state.ticket_id,
+                    st.session_state.thread_id,
+                    user_query,
+                    extracted_meta.get("department", "General"),
+                    extracted_meta.get("intent", "General"),
+                    extracted_meta.get("sentiment", "Neutral"),
+                    extracted_meta.get("priority", "Medium"),
+                    False,
+                    final_response,
+                    latency_sec=0.01,
+                    token_count=0
+                )
+                st.rerun()
+
+            # 2. Cache Miss: Execute LangGraph State Machine
             config = {"configurable": {"thread_id": st.session_state.thread_id}}
             inputs = {"messages": [HumanMessage(content=user_query)]}
 
@@ -484,6 +537,10 @@ with tab_chat:
                                 extracted_meta["sentiment"] = state_update.get("sentiment")
                             if "priority" in state_update:
                                 extracted_meta["priority"] = state_update.get("priority")
+                            if "intent" in state_update:
+                                extracted_meta["intent"] = state_update.get("intent")
+                            if "approval_required" in state_update:
+                                extracted_meta["approval_required"] = state_update.get("approval_required")
                             if "total_tokens" in state_update:
                                 step_tokens += state_update.get("total_tokens", 0)
                             if "final_response" in state_update:
@@ -500,6 +557,15 @@ with tab_chat:
                         st.session_state.pending_approval = True
                         st.rerun()
                     elif final_response:
+                        # Cache verified response for repeated FAQs
+                        if extracted_meta.get("intent") != "Memory" and not extracted_meta.get("approval_required"):
+                            support_cache.set(user_query, {
+                                "final_response": final_response,
+                                "metadata": extracted_meta,
+                                "intent": extracted_meta.get("intent"),
+                                "approval_required": False
+                            })
+
                         st.markdown(final_response)
                         st.session_state.messages.append({
                             "role": "assistant",
